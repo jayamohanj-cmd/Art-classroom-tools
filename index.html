@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Art Room Tools</title>
+<meta name="description" content="Free browser tools for art students: an idea generator, a camera manual-mode simulator, a daily drawing warm-up and a spray-paint stencil maker. No login, nothing to install.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f4f3f1;          /* cartridge paper */
+  --surface: #e9e9e2;
+  --ink: #23211d;         /* pencil */
+  --muted: #645f55;
+  --line: rgba(35,33,29,.14);
+  /* one paint per tool */
+  --yellow: #f4b81c;  --yellow-ink: #23211d;
+  --blue: #2b45a8;    --blue-ink: #ffffff;
+  --red: #cf2e2e;     --red-ink: #ffffff;
+  --green: #217a5c;   --green-ink: #ffffff;
+  --paint: var(--yellow); --paint-ink: var(--yellow-ink);
+  --accent: var(--red);
+  --accent-ink: #ffffff;
+  --field-1: var(--yellow);
+  --field-1-ink: #23211d;
+  --field-1-muted: #4d3f17;
+
+  --display: "Bricolage Grotesque", "Trebuchet MS", sans-serif;
+  --text: "Work Sans", system-ui, sans-serif;
+
+  --step-small: clamp(0.875rem, 0.85rem + 0.1vw, 0.9375rem);
+  --step-body: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+  --step-lead: clamp(1.25rem, 1.1rem + 0.7vw, 1.625rem);
+  --step-head: clamp(2.5rem, 1.3rem + 4vw, 5rem);
+  --step-display: clamp(3rem, 11.4vw, 11.5rem);
+
+  --m: 32px;
+  --gap: 24px;
+  --section: clamp(120px, 14vw, 200px);
+  --ease: cubic-bezier(.2,.7,.1,1);
+}
+@media (max-width: 700px) { :root { --m: 20px; --gap: 16px; } }
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 400 var(--step-body)/1.5 var(--text);
+  overflow-x: hidden;
+}
+img { display: block; max-width: 100%; height: auto; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+::selection { background: var(--yellow); color: var(--ink); }
+.p-yellow { --paint: var(--yellow); --paint-ink: var(--yellow-ink); }
+.p-blue { --paint: var(--blue); --paint-ink: var(--blue-ink); }
+.p-red { --paint: var(--red); --paint-ink: var(--red-ink); }
+.p-green { --paint: var(--green); --paint-ink: var(--green-ink); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.wrap { padding-inline: var(--m); }
+.grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gap); }
+
+h1, h2, h3 { font-family: var(--display); font-weight: 800; font-variation-settings: "opsz" 96; letter-spacing: -0.035em; line-height: .95; margin: 0; }
+h2 { font-size: var(--step-head); }
+h3 { font-size: var(--step-head); }
+p { margin: 0; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: .6em;
+  background: var(--paint); color: var(--paint-ink);
+  font: 600 var(--step-body)/1 var(--text); text-decoration: none;
+  padding: 1.05em 1.5em; border: 0; border-radius: 999px; cursor: pointer;
+  transition: background-color .4s, color .4s, filter .2s, transform .2s var(--ease);
+}
+.btn:hover { filter: brightness(.9); }
+.btn:active { transform: translateY(2px); }
+.btn .arr { transition: transform .25s var(--ease); }
+.btn:hover .arr { transform: translateX(4px); }
+
+.link {
+  font-weight: 600; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: .25em;
+  transition: text-underline-offset .2s var(--ease), color .2s;
+}
+.link:hover { text-underline-offset: .4em; }
+
+/* ---------- nav ---------- */
+.nav { display: flex; align-items: center; justify-content: space-between; padding-block: 24px; gap: 24px; }
+.wordmark { display: inline-flex; align-items: center; gap: 12px; font: 800 1.375rem/1 var(--display); letter-spacing: -0.02em; text-decoration: none; }
+.swatches { display: inline-grid; grid-template-columns: repeat(2, 9px); gap: 3px; }
+.swatches i { width: 9px; height: 9px; border-radius: 2px; background: var(--paint); }
+.nav ul { list-style: none; display: flex; gap: 32px; margin: 0; padding: 0; font-size: var(--step-body); }
+.nav a:not(.wordmark) { text-decoration: none; font-weight: 600; transition: color .2s; }
+.nav a:not(.wordmark):hover { color: var(--muted); }
+
+/* ---------- hero ---------- */
+.hero { min-height: 100svh; display: flex; flex-direction: column; }
+.hero-body {
+  flex: 1; display: grid; grid-template-columns: repeat(12, minmax(0,1fr)); column-gap: var(--gap);
+  align-items: center; padding-block: 2vh 8vh;
+}
+.hero-text { grid-column: 1 / span 6; }
+.sentence { font-size: clamp(2.75rem, 5.6vw, 6.5rem); line-height: .95; }
+.sentence .line { display: block; white-space: nowrap; }
+.need { display: inline-block; padding-inline: .04em; text-decoration: underline var(--paint); text-decoration-thickness: .2em; text-underline-offset: .06em; text-decoration-skip-ink: none;
+  transition: opacity .25s, transform .35s var(--ease); }
+.need.swap { opacity: 0; transform: translateY(.12em); }
+.hero-text .lede { font-size: var(--step-lead); line-height: 1.35; max-width: 26ch; margin-top: 32px; }
+.picker { margin-top: 40px; }
+.picker p { color: var(--muted); font-size: var(--step-small); margin-bottom: 10px; }
+.chips { display: flex; flex-wrap: wrap; gap: 10px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: transparent; border: 2px solid var(--line); border-radius: 999px; padding: 10px 18px 10px 12px; cursor: pointer; color: var(--ink);
+  font: 500 var(--step-body)/1.2 var(--text);
+  transition: border-color .2s, background-color .2s;
+}
+.chip::before { content: ""; width: 14px; height: 14px; border-radius: 50%; background: var(--paint); }
+.chip:hover { border-color: var(--ink); }
+.chip[aria-pressed="true"] { border-color: var(--ink); background: #fff; font-weight: 600; }
+.go { margin-top: 36px; }
+
+.preview { grid-column: 7 / -1; margin: 0 calc(var(--m) * -1) 0 0; }
+.screen {
+  position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: var(--paint); border-radius: 6px 0 0 6px;
+  transition: background-color .5s;
+  clip-path: inset(0 0 0 100%); animation: shutter 1.1s .2s var(--ease) forwards;
+}
+.screen img {
+  position: absolute; inset: 6%; width: 88%; height: 88%; object-fit: contain; border-radius: 4px;
+  opacity: 0; transform: translateY(14px); transition: opacity .6s, transform .8s var(--ease);
+}
+.screen img.on { opacity: 1; transform: none; }
+@keyframes shutter { to { clip-path: inset(0 0 0 0); } }
+.preview figcaption { display: flex; gap: 12px; margin-top: 14px; font-size: var(--step-small); color: var(--muted); padding-right: var(--m); }
+.preview figcaption b { color: var(--ink); font-weight: 600; }
+
+/* ---------- intro ---------- */
+.intro { padding-top: var(--section); position: relative; }
+.intro-grid { position: relative; min-height: 100svh; }
+.intro h2 { grid-column: 1 / span 8; grid-row: 1; position: relative; z-index: 2; padding-top: 6vh; }
+.intro h2 .l2 { display: block; padding-left: 1.6em; }
+.intro .big { grid-column: 8 / -1; grid-row: 1 / span 2; margin-right: calc(var(--m) * -1); margin-top: 18vh; }
+.intro .big img { width: 100%; height: 86svh; object-fit: cover; object-position: 38% 50%; filter: grayscale(1) contrast(1.04); border-radius: 6px 0 0 6px; }
+.intro .copy { grid-column: 1 / span 5; grid-row: 2; padding-top: 48px; }
+.intro .copy p { font-size: var(--step-lead); line-height: 1.4; max-width: 30ch; }
+figcaption { font-size: var(--step-small); color: var(--muted); margin-top: 10px; }
+
+/* ---------- work ---------- */
+.work { padding-top: var(--section); }
+.work > .wrap > h2 { margin-bottom: 72px; }
+.work .head-row { display: grid; grid-template-columns: repeat(12,minmax(0,1fr)); column-gap: var(--gap); align-items: end; margin-bottom: 80px; }
+.work .head-row h2 { grid-column: 1 / span 7; }
+.work .head-row p { grid-column: 9 / span 4; font-size: var(--step-lead); line-height: 1.35; }
+.tool { align-items: end; overflow: hidden; }
+.tool + .tool { margin-top: 140px; }
+.tool .visual { grid-column: 1 / span 7; margin-left: calc(var(--m) * -1); height: var(--h, 76svh); overflow: hidden; background: var(--paint); border-radius: 0 6px 6px 0;
+  padding: clamp(20px, 3.4vw, 56px); padding-left: calc(var(--m) + clamp(20px, 3.4vw, 56px)); }
+.tool .visual img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; transition: transform 1.2s var(--ease); }
+.tool:hover .visual img { transform: scale(1.03); }
+.tool .cluster { grid-column: 8 / span 5; padding-left: 4%; }
+.tool .cluster figure { margin: 0 0 28px; }
+.tool .cluster figure img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; object-position: top left; border-radius: 4px; outline: 1px solid var(--line); }
+.tool h3 { margin-bottom: 16px; }
+.tool .for { font-weight: 600; margin-bottom: 8px; display: flex; gap: 10px; align-items: baseline; }
+.tool .for::before { content: ""; flex: none; width: .8em; height: .8em; border-radius: 50%; background: var(--paint); transform: translateY(.08em); }
+.tool .desc { max-width: 46ch; }
+.tool .links { display: flex; flex-wrap: wrap; gap: 14px 28px; margin-top: 24px; align-items: center; }
+.tool .links .btn { padding: .9em 1.2em; }
+
+/* ---------- list ---------- */
+.next { padding-top: var(--section); }
+.next h2 { padding-left: 3vw; }
+.next h2 .l2 { display: block; padding-left: 0; margin-left: -3vw; }
+.next-body { margin-top: 48px; }
+.next-note { grid-column: 1 / span 8; padding-left: 3vw; font-size: clamp(1.5rem, 1rem + 1.4vw, 2.25rem); line-height: 1.25; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
+.next-note .state { font-size: var(--step-small); background: var(--red); color: #fff; font-weight: 600; padding: 5px 14px; border-radius: 999px; }
+
+
+/* ---------- about ---------- */
+.about { padding-block: var(--section) 140px; }
+.about h2 { grid-column: 3 / span 7; margin-bottom: 48px; }
+.facts { grid-column: 1 / span 2; grid-row: 2; font-size: var(--step-small); display: grid; gap: 18px; align-content: start; padding-top: 8px; }
+.facts b { display: block; font-weight: 600; }
+.facts span { color: var(--muted); }
+.bio { grid-column: 3 / span 6; grid-row: 2; font-size: clamp(1.5rem, 1rem + 1.4vw, 2.25rem); line-height: 1.2; }
+.bio p + p { margin-top: 1.2em; font-size: var(--step-lead); line-height: 1.4; max-width: 34ch; }
+.sheet { grid-column: 10 / -1; grid-row: 2; margin: 0; align-self: start; transform: rotate(1.5deg); }
+.sheet img { width: 100%; border-radius: 4px; }
+.bio strong { font-weight: 600; }
+
+/* ---------- footer ---------- */
+.foot { background: var(--field-1); color: var(--field-1-ink); min-height: 100svh; display: flex; flex-direction: column; overflow: hidden; padding-top: 96px; }
+.foot .top { align-items: start; }
+.foot h2 { grid-column: 1 / span 7; font-size: var(--step-head); margin-bottom: 32px; }
+.foot .invite { grid-column: 1 / span 7; }
+.foot .invite p { font-size: var(--step-lead); line-height: 1.35; max-width: 32ch; margin-bottom: 32px; }
+.foot .btn { background: var(--field-1-ink); color: #fff; }
+.foot .btn:hover { filter: none; background: var(--blue); }
+.foot ul { grid-column: 10 / span 3; list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.foot ul a { font-weight: 600; text-decoration: none; transition: color .2s; }
+.foot ul a:hover { color: var(--blue); }
+.foot .legal > span:first-child { max-width: 62ch; }
+.foot .legal > span:last-child { white-space: nowrap; }
+.foot .legal { margin-top: auto; display: flex; justify-content: space-between; gap: 24px; font-size: var(--step-small); color: var(--field-1-muted); padding-top: 64px; }
+.foot .legal a { color: inherit; }
+.bigname { font: 800 14.6vw/0.8 var(--display); font-variation-settings: "opsz" 96; white-space: nowrap; letter-spacing: -0.055em; transform: translateY(16%); margin: 8px 0 0 calc(var(--m) * -0.3); }
+
+/* ---------- entrances ---------- */
+.js .rise { opacity: 0; transform: translateY(24px); transition: opacity .7s var(--ease), transform .8s var(--ease); transition-delay: calc(var(--i, 0) * 80ms); }
+.js .rise.in { opacity: 1; transform: none; }
+
+/* ---------- phone ---------- */
+@media (max-width: 900px) {
+  .hero-text { display: contents; }
+  .hero-body { grid-template-columns: 1fr; align-content: center; }
+  .sentence { font-size: 11.4vw; }
+  .preview { grid-column: 1; margin: 28px calc(var(--m) * -1) 0 0; }
+  .tool .visual { border-radius: 0; padding: 20px calc(var(--m) + 4px); }
+  .hero-text .lede { max-width: none; }
+  .hero-text > * { order: 2; }
+  .hero-text > .sentence { order: 0; }
+  .preview { order: 1; }
+  .go .btn { width: 100%; justify-content: space-between; }
+  .intro-grid { min-height: 0; }
+  .intro h2 { grid-column: 1 / -1; padding-top: 0; }
+  .intro h2 .l2 { padding-left: 0; }
+  .intro .big { grid-column: 4 / -1; grid-row: 2; margin-top: -.3em; }
+  .intro .big img { height: auto; aspect-ratio: 3 / 4; }
+  .intro .copy { grid-column: 1 / -1; grid-row: 3; }
+  .work .head-row h2, .work .head-row p { grid-column: 1 / -1; }
+  .work .head-row p { margin-top: 24px; }
+  .tool .visual { grid-column: 1 / -1; margin-right: calc(var(--m) * -1); height: auto; aspect-ratio: 4 / 5; }
+  .tool .cluster { grid-column: 1 / -1; padding: 28px 0 0; display: flex; flex-direction: column; }
+  .tool .cluster figure { order: 3; width: 78%; align-self: flex-end; margin: 32px 0 0; }
+  .tool + .tool { margin-top: 88px; }
+  .next h2 { padding-left: 0; }
+  .next h2 .l2 { margin-left: 0; }
+  .next-note { grid-column: 1 / -1; padding-left: 0; }
+    .about h2, .bio, .facts { grid-column: 1 / -1; }
+  .sheet { grid-column: 4 / -1; grid-row: 4; margin-top: 40px; transform: none; }
+  .bio p + p { font-size: inherit; }
+  .facts { grid-row: 3; grid-template-columns: repeat(3, 1fr); margin-top: 40px; }
+  .bio { font-size: var(--step-body); line-height: 1.5; }
+  .foot { min-height: 0; }
+  .foot .legal { margin-top: 0; }
+  .foot h2, .foot .invite, .foot ul { grid-column: 1 / -1; }
+  .foot ul { margin-top: 40px; display: flex; flex-wrap: wrap; gap: 10px 20px; }
+  .foot .invite .btn { width: 100%; justify-content: space-between; }
+  .foot .legal { flex-direction: column; gap: 8px; }
+  .bigname { font-size: 14.4vw; }
+  .nav ul { gap: 18px; }
+}
+@media (min-width: 561px) and (max-width: 900px) {
+  .preview { order: 3; margin-top: 48px; }
+  .sentence { font-size: 9.6vw; }
+  .tool .visual { aspect-ratio: 16 / 10; }
+  .tool .cluster figure { width: 56%; }
+  .intro .big { grid-column: 6 / -1; }
+  }
+@media (max-width: 560px) {
+  .nav ul li:not(:last-child) { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen { animation: none; clip-path: none; }
+  .screen img, .screen img.on { transform: none; transition: opacity .2s; }
+  .js .rise { transform: none; transition: opacity .3s; transition-delay: 0s; }
+  .tool .visual img, .tool:hover .visual img { transform: none; }
+}
+</style>
+</head>
+<body>
+<script>document.documentElement.classList.add('js')</script>
+
+<header class="hero wrap p-yellow" id="hero">
+  <nav class="nav" aria-label="Main">
+    <a class="wordmark" href="#top"><span class="swatches" aria-hidden="true"><i class="p-yellow"></i><i class="p-blue"></i><i class="p-red"></i><i class="p-green"></i></span>Art Room Tools</a>
+    <ul>
+      <li><a href="#tools">Tools</a></li>
+      <li><a href="#next">Coming next</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="https://github.com/jayamohanj-cmd">GitHub</a></li>
+    </ul>
+  </nav>
+  <div class="hero-body" id="top">
+    <div class="hero-text">
+      <h1 class="sentence"><span class="line">I need</span><span class="line"><span class="need" id="need">an idea</span></span></h1>
+      <p class="lede">Free tools for art students, made in an art classroom. No login, nothing to install.</p>
+      <div class="picker">
+        <p id="pick-label">What do you need right now?</p>
+        <div class="chips" role="group" aria-labelledby="pick-label">
+          <button class="chip p-yellow" type="button" data-need="idea" aria-pressed="true">An idea</button>
+          <button class="chip p-blue" type="button" data-need="warm" aria-pressed="false">A warm-up</button>
+          <button class="chip p-red" type="button" data-need="camera" aria-pressed="false">Camera practice</button>
+          <button class="chip p-green" type="button" data-need="stencil" aria-pressed="false">A stencil</button>
+        </div>
+      </div>
+      <div class="go"><a class="btn" id="go" href="https://jayamohanj-cmd.github.io/Idea-Generator/"><span id="go-label">Open the Idea Generator</span> <span class="arr" aria-hidden="true">→</span></a></div>
+    </div>
+    <figure class="preview">
+      <div class="screen">
+        <img class="on" data-need="idea" src="img/prev-idea.jpg" alt="The Idea Generator: a pile of cards on a green cutting mat, the drawn card and a fill-in sentence" width="1800" height="1125">
+        <img data-need="warm" src="img/prev-warmup.jpg" alt="The Daily Drawing Warm-Up: one large drawing prompt with a timer line under it" width="1800" height="1125">
+        <img data-need="camera" src="img/prev-manual.jpg" alt="Manual Mode: a lighthouse scene with a light meter, a goal checklist and three dials" width="1800" height="1125">
+        <img data-need="stencil" src="img/prev-stencil.jpg" alt="Spray Paint Portraits: a portrait split into three sprayed stencil layers" width="1800" height="1125">
+      </div>
+      <figcaption id="cap"><b>Idea Generator</b> Pull a card when you’re stuck.</figcaption>
+    </figure>
+  </div>
+</header>
+
+<main>
+  <section class="intro wrap" aria-labelledby="intro-h">
+    <div class="grid intro-grid">
+      <h2 id="intro-h" class="rise">Made in class, <span class="l2">for any class</span></h2>
+      <figure class="big rise" style="--i:2; margin-inline-start:0; margin-block:0">
+        <img src="img/art-class-1899.jpg" alt="Students in long rows of drawing desks copy plaster casts in an art class, 1899" width="1536" height="1193" loading="lazy">
+        <figcaption>Students drawing in an art class, Washington, D.C., 1899.</figcaption>
+      </figure>
+      <div class="copy rise" style="--i:1">
+        <p>Each tool began as a real problem in class: a blank page, a camera nobody would take off auto, a stencil that fell apart when it was cut. Each one is a single web page that runs on a school Chromebook and stores nothing about you.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="work wrap" id="tools" aria-labelledby="tools-h">
+    <div class="head-row">
+      <h2 id="tools-h" class="rise">Four tools, free to use</h2>
+      <p class="rise" style="--i:1">Open any of them in a browser. Each one's code is on GitHub for any teacher to copy and change.</p>
+    </div>
+
+    <article class="tool grid p-yellow" style="--h: 82svh" aria-labelledby="t1">
+      <div class="visual rise"><img src="img/idea-card.jpg" alt="The Hybridize card: a sneaker before, and after, crossed with a shark, with two questions to ask yourself" width="920" height="1220" loading="lazy"></div>
+      <div class="cluster">
+        <figure class="rise" style="--i:1"><img src="img/idea-full.jpg" alt="The Idea Generator on a green cutting mat: a pile of cards, the drawn card and a fill-in sentence" width="1440" height="900" loading="lazy"></figure>
+        <h3 id="t1" class="rise" style="--i:2">Idea<br>Generator</h3>
+        <p class="for rise" style="--i:3">For when you're stuck at the start of a project.</p>
+        <p class="desc rise" style="--i:3">Pull a card from a pile of 23 ways to change an idea, such as subtract, repeat or hybridize. Each card draws a sneaker before and after, asks two questions and names artists who did it. Fill in one sentence, keep up to three ideas and save the best as a picture.</p>
+        <div class="links rise" style="--i:4">
+          <a class="btn" href="https://jayamohanj-cmd.github.io/Idea-Generator/">Open it <span class="arr" aria-hidden="true">→</span></a>
+          <a class="link" href="https://github.com/jayamohanj-cmd/Idea-Generator">Code on GitHub</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="tool grid p-red" style="--h: 62svh" aria-labelledby="t2">
+      <div class="visual rise"><img src="img/manual-scene.jpg" alt="A lighthouse scene in the simulator, with the focus point on the tower" width="1400" height="873" loading="lazy"></div>
+      <div class="cluster">
+        <figure class="rise" style="--i:1"><img src="img/manual-full.jpg" alt="Manual Mode: scene list, light meter, goal checklist and dials for aperture, shutter and ISO" width="1440" height="900" loading="lazy"></figure>
+        <h3 id="t2" class="rise" style="--i:2">Manual Mode<br>Simulator</h3>
+        <p class="for rise" style="--i:3">For practising before you use a real camera.</p>
+        <p class="desc rise" style="--i:3">Set aperture, shutter speed and ISO yourself across six scenes, each with a goal: freeze the gulls, blur the waterfall, light the dance stage. Depth of field, motion blur, camera shake and grain change as you turn the dials. Your shots line up on a contact sheet.</p>
+        <div class="links rise" style="--i:4">
+          <a class="btn" href="https://jayamohanj-cmd.github.io/Manual-Mode/">Open it <span class="arr" aria-hidden="true">→</span></a>
+          <a class="link" href="https://github.com/jayamohanj-cmd/Manual-Mode">Code on GitHub</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="tool grid p-blue" style="--h: 88svh" aria-labelledby="t3">
+      <div class="visual rise"><img src="img/warmup-prompt.jpg" alt="A projected prompt: Draw your own thumb as slowly as you can. Your pencil should still be moving when the timer ends." width="1600" height="692" loading="lazy" style="object-position: 6% 50%"></div>
+      <div class="cluster">
+        <figure class="rise" style="--i:1"><img src="img/warmup-full.jpg" alt="The warm-up page: one large prompt with a wavy timer line under it" width="1440" height="900" loading="lazy"></figure>
+        <h3 id="t3" class="rise" style="--i:2">Daily Drawing<br>Warm-Up</h3>
+        <p class="for rise" style="--i:3">For the first five minutes of class.</p>
+        <p class="desc rise" style="--i:3">One drawing prompt a day, on the projector as students walk in and big enough to read from the back row. The line under the prompt is the timer: it drains away over four minutes. Arrow keys change the prompt, and C lets you write your own.</p>
+        <div class="links rise" style="--i:4">
+          <a class="btn" href="https://jayamohanj-cmd.github.io/Warmup-Drawings/">Open it <span class="arr" aria-hidden="true">→</span></a>
+          <a class="link" href="https://github.com/jayamohanj-cmd/Warmup-Drawings">Code on GitHub</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="tool grid p-green" style="--h: 92svh" aria-labelledby="t4">
+      <div class="visual rise"><img src="img/stencil-print.jpg" alt="A finished spray-paint stencil portrait on white paper, sprayed in three layers: yellow, red and black" width="1200" height="1600" loading="lazy" style="object-position: 50% 30%"></div>
+      <div class="cluster">
+        <figure class="rise" style="--i:1"><img src="img/stencil-layers.jpg" alt="Three stencil layers, silhouette, mid-tones and details, each with a threshold slider and download buttons" width="1440" height="872" loading="lazy"></figure>
+        <h3 id="t4" class="rise" style="--i:2">Spray Paint<br>Portraits</h3>
+        <p class="for rise" style="--i:3">For turning a photo into stencils you can cut.</p>
+        <p class="desc rise" style="--i:3">Split a photo into two to six layers to cut by hand, on a laser cutter or on a Cricut. It finds the pieces that would fall out and adds bridges where a later layer will spray over them. Your photo never leaves your computer.</p>
+        <div class="links rise" style="--i:4">
+          <a class="btn" href="https://jayamohanj-cmd.github.io/Stencil-Portraits-/">Open it <span class="arr" aria-hidden="true">→</span></a>
+          <a class="link" href="https://github.com/jayamohanj-cmd/Stencil-Portraits-">Code on GitHub</a>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section class="next wrap" id="next" aria-labelledby="next-h">
+    <h2 id="next-h" class="rise">On the drawing <span class="l2">board next</span></h2>
+    <div class="grid next-body">
+      <p class="next-note rise" style="--i:1"><span class="state on">Upcoming</span> A new media art web tool, in the works now.</p>
+    </div>
+  </section>
+
+  <section class="about wrap" id="about" aria-labelledby="about-h">
+    <div class="grid">
+      <h2 id="about-h" class="rise">Why these tools exist</h2>
+      <div class="facts rise" style="--i:2">
+        <div><b>Made for</b><span>Middle school art, used anywhere</span></div>
+        <div><b>Since</b><span>2025</span></div>
+        <div><b>Costs</b><span>Nothing, no accounts</span></div>
+      </div>
+      <div class="bio rise" style="--i:1">
+        <p><strong>I built these tools to fill a few gaps in my art room,</strong> in the spirit of finding a need and then filling it.</p>
+        <p>I use them often with my students. Feel free to use them too, or take the code from GitHub and develop the ideas further. I&rsquo;ll be adding more tools to this page as I find more gaps. Enjoy.</p>
+      </div>
+      <figure class="sheet rise" style="--i:3">
+        <img src="img/stencil-sheet.jpg" alt="Stencil layer 2, mid-tones: a portrait cut into black and white shapes, with green bridges holding the loose pieces" width="470" height="872" loading="lazy">
+        <figcaption>Layer 2 of 3, with bridges added so nothing falls out.</figcaption>
+      </figure>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap grid top">
+    <h2 class="rise">Got an idea<br>for a tool?</h2>
+    <div class="invite rise" style="--i:1">
+      <p>Students and teachers suggest the next ones. Say what keeps getting stuck in your art room.</p>
+      <a class="btn" href="https://github.com/jayamohanj-cmd">Find me on GitHub <span class="arr" aria-hidden="true">→</span></a>
+    </div>
+    <ul class="rise" style="--i:2" aria-label="The tools">
+      <li><a href="https://jayamohanj-cmd.github.io/Idea-Generator/">Idea Generator</a></li>
+      <li><a href="https://jayamohanj-cmd.github.io/Manual-Mode/">Manual Mode</a></li>
+      <li><a href="https://jayamohanj-cmd.github.io/Warmup-Drawings/">Drawing Warm-Up</a></li>
+      <li><a href="https://jayamohanj-cmd.github.io/Stencil-Portraits-/">Spray Paint Portraits</a></li>
+    </ul>
+  </div>
+  <div class="wrap legal">
+    <span>Photographs: "Students drawing in an art class, Western High School, Washington, D.C." by Frances Benjamin Johnston, 1899, public domain, <a href="https://commons.wikimedia.org/wiki/File:Students_drawing_in_an_art_class,_Western_High_School,_Washington,_D.C._LCCN2001699124.jpg">via Wikimedia Commons</a>. Stencil demo portrait: "Portrait of Man Leaning Away from Camera", unidentified photographer, CC0, Cleveland Museum of Art, <a href="https://commons.wikimedia.org/w/index.php?curid=77782977">via Wikimedia Commons</a>.</span>
+    <span>Free to use. Code on GitHub.</span>
+  </div>
+  <div class="bigname" aria-hidden="true">Art Room Tools</div>
+</footer>
+
+<script>
+(() => {
+  const P = { idea: 'p-yellow', warm: 'p-blue', camera: 'p-red', stencil: 'p-green' };
+  const hero = document.getElementById('hero');
+  const T = {
+    idea:    { word: 'an idea',         label: 'Open the Idea Generator', name: 'Idea Generator', line: 'Pull a card when you’re stuck.',      href: 'https://jayamohanj-cmd.github.io/Idea-Generator/' },
+    warm:    { word: 'to warm up',      label: 'Open the Drawing Warm-Up', name: 'Daily Drawing Warm-Up', line: 'Five minutes of drawing to start class.',     href: 'https://jayamohanj-cmd.github.io/Warmup-Drawings/' },
+    camera:  { word: 'camera practice', label: 'Open Manual Mode', name: 'Manual Mode Simulator', line: 'Practise aperture, shutter and ISO.',             href: 'https://jayamohanj-cmd.github.io/Manual-Mode/' },
+    stencil: { word: 'a stencil',       label: 'Open Spray Paint Portraits', name: 'Spray Paint Portraits', line: 'Turn a photo into stencils to cut.',   href: 'https://jayamohanj-cmd.github.io/Stencil-Portraits-/' }
+  };
+  const order = Object.keys(T);
+  const need = document.getElementById('need');
+  const go = document.getElementById('go');
+  const goLabel = document.getElementById('go-label');
+  const chips = [...document.querySelectorAll('.chip')];
+  const pics = [...document.querySelectorAll('.screen img')];
+  const cap = document.getElementById('cap');
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let cur = 'idea', timer = null;
+
+  function show(k) {
+    if (k === cur) return;
+    cur = k;
+    chips.forEach(c => c.setAttribute('aria-pressed', String(c.dataset.need === k)));
+    pics.forEach(p => p.classList.toggle('on', p.dataset.need === k));
+    hero.classList.remove(...Object.values(P)); hero.classList.add(P[k]);
+    go.href = T[k].href; goLabel.textContent = T[k].label;
+    cap.innerHTML = '<b>' + T[k].name + '</b> ' + T[k].line;
+    if (still) { need.textContent = T[k].word; return; }
+    need.classList.add('swap');
+    setTimeout(() => { need.textContent = T[k].word; need.classList.remove('swap'); }, 220);
+  }
+  chips.forEach(c => c.addEventListener('click', () => { clearInterval(timer); timer = null; show(c.dataset.need); }));
+  if (!still) timer = setInterval(() => show(order[(order.indexOf(cur) + 1) % order.length]), 3600);
+
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+  }), { rootMargin: '0px 0px -6% 0px' });
+  const rises = [...document.querySelectorAll('.rise')];
+  rises.forEach(el => io.observe(el));
+  // Near the end of the page, or if the reader jumps there, show whatever is left.
+  const sweep = () => {
+    const vh = innerHeight;
+    rises.forEach(el => { if (!el.classList.contains('in') && el.getBoundingClientRect().top < vh) el.classList.add('in'); });
+    if (scrollY + vh > document.documentElement.scrollHeight - vh * 1.5) rises.forEach(el => el.classList.add('in'));
+  };
+  addEventListener('scroll', sweep, { passive: true });
+})();
+</script>
+</body>
+</html>
