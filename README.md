@@ -2,7 +2,7 @@
 
 One page that links free browser tools for art students, built in an art classroom. No login, nothing to install.
 
-**Open it:** https://jayamohanj-cmd.github.io/Tools-for-the-artroom/
+**Open it:** https://jayamohanj-cmd.github.io/Art-classroom-tools/
 
 | Tool | For | Open | Code |
 |---|---|---|---|
